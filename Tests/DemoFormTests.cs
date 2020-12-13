@@ -27,7 +27,7 @@ namespace Tests
         private List<IFormElement> _testFormElements;
 
         [SetUp]
-        public async Task Setup()
+        public void Setup()
         {
             _formSpecsDictionary = FormSpecsSetup.FormSpecsDictionary;
             var appSettings = new ApplicationSettings("url", new DummySmsSender(),
@@ -46,11 +46,13 @@ namespace Tests
                 BlockType.Available, calendarId);
             _allSettings.CurrentBlockParameters = new CurrentBlockParameters(block, calendarDay,
                 "", false, DateTimeOffset.MinValue, DateTimeOffset.MaxValue);
+            // Because FormSpecsDictionary is static, always use .Clone
             var formSpecs = _formSpecsDictionary[_formSpecName].Clone();
             _testFormProcessor = (DemoFormProcessor) formSpecs.FormProcessor;
             _testFormElements = formSpecs.Elements;
         }
 
+        #region BasicTests
         [Test]
         public void FormSpecs_AllElements_NumberCorrect()
         {
@@ -76,7 +78,6 @@ namespace Tests
             var formSpecs = _formSpecsDictionary[_formSpecName].Clone();
             var secondProcessor = formSpecs.FormProcessor;
             var secondElementList = formSpecs.Elements;
-            Assert.IsTrue(_testFormProcessor.Equals(secondProcessor));
             Assert.IsFalse(ReferenceEquals(_testFormProcessor, secondProcessor));
         }
         [Test]
@@ -89,10 +90,11 @@ namespace Tests
             //check that tests do not interfere
             _testFormProcessor.ExtractElements(out var displayOnlyButton, out var closeElement, out var display,
                 out var input, out var select, out var submit,
-                out var textArea, out var title, 
+                out var textArea, out var title,
                 out var start, out var duration, _testFormElements);
             Assert.AreEqual("All elements displayed for styling initially", title.Value);
-        }
+        } 
+        #endregion
 
         [Test]
         public async Task DisplayOnlyButton_Always_BehavesAsExpected()
