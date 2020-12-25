@@ -10,10 +10,8 @@
 
 <h1>Demo web app for FRTForm</h1>
 
-<button type="button" @onclick="@(e => HandleClick("modalFormSpecs"))">Launch ModalForm</button>
+<button type="button" @onclick="@(e => HandleClick("demoFormSpecs"))">Launch ModalForm</button>
 <button type="button" @onclick="@(e => HandleClick("basicFormSpecs"))">Launch BasicForm</button>
-
-Click the link in the menu bar to display a demonstration form using FRTForm
 
 @code {
     private IAllSettingsBT _allSettings;
@@ -47,7 +45,7 @@ Click the link in the menu bar to display a demonstration form using FRTForm
 
     private void HandleClick(string formSpecsName)
     {
-        if (formSpecsName == "modalFormSpecs")
+        if (formSpecsName == "demoFormSpecs")
         {
             var parameters = new ModalParameters();
             parameters.Add(nameof(DemoForm.AllSettings), _allSettings);

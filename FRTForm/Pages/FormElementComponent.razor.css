@@ -4,13 +4,13 @@
 .frtform-formgroup {
     display: flex;
     align-items: center;
-    padding-bottom: 1.2rem;
+    padding-bottom: 1rem;
 }
 .frtform-formgroup-stack {
     display: flex;
     flex-direction: column;
     /*    align-items: center;*/
-    padding-bottom: 1.2rem;
+    padding-bottom: 1rem;
 }
 .frtform-formheader {
     padding-bottom: 1rem;
@@ -32,6 +32,7 @@
     border-color: #1861ac;
     border-radius: 4px;
     font-family: inherit;
+    font-size: inherit;
     line-height: inherit;
 }
 .frtform-btn-danger {
@@ -40,13 +41,45 @@
     border-color: #1861ac;
     border-radius: 4px;
     font-family: inherit;
+    font-size: inherit;
     line-height: inherit;
 }
-select {
-    font-size: 1.2rem;
-    border: 2px solid #eee;
-    border-radius: 10%;
+.frtform-input {
     font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    border: 2px solid;
+    border-radius: 4px;
+}
+.frtform-input-error {
+    border-color: red;
+}
+.frtform-input-valid {
+    border-color: greenyellow;
+}
+.frtform-textarea {
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    width: 100%;
+    border: 2px solid;
+    border-radius: 4px;
+}
+.frtform-element-error {
+    color: red;
+    font-size: 0.8rem;
+    margin: 0;
+    margin-top: -1rem;
+    margin-bottom: 0.5rem;
+}
+.frtform-select {
+    width: 100%;
+    border: 2px solid;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    background-color: #f1f1f1;
 }
 button:disabled,
 [type="button"]:disabled,

@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using FRTForm.BlockTime.Models;
+using FRTForm.Enums;
 using FRTForm.Models;
 using FRTForm.Settings;
 using FRTForm.Utilities;
@@ -14,20 +15,28 @@ namespace Demo.FormClasses.Utilities
 {
     public class DemoFormProcessor : IFormProcessor
     {
+        private bool _shouldValidate;
         public async Task HandleClickAsync(List<IFormElement> formElements, string elementName, IAllSettings allSettings)
         {
+            var displayOnly = false;
             if (elementName == "DisplayOnlyButton")
             {
                 // Can ignore cast if only dealing with interface properties (as in this example)
                 var displayOnlyButton = (ButtonElement) formElements.FirstOrDefault(e => e.Name == "DisplayOnlyButton");
                 Debug.Assert(displayOnlyButton != null, nameof(displayOnlyButton) + " != null");
-                displayOnlyButton.NotVisible = true;
+                displayOnly = true;
+            }
+            else if (elementName == "TextArea")
+            {
+                var textArea = (TextAreaElement) formElements.FirstOrDefault(e => e.Name == "TextArea");
+                Debug.Assert(textArea != null, nameof(textArea) + " != null");
+                textArea.Value += "Button clicked";
             }
             else
             {
                 throw new NotImplementedException();
             }
-            await UpdateElementsAsync(formElements, allSettings, false);
+            await UpdateElementsAsync(formElements, allSettings, displayOnly);
         }
 
         
@@ -38,17 +47,32 @@ namespace Demo.FormClasses.Utilities
                 out var input, out var select, out var submit,
                 out var textArea, out var title,
                 out var start, out var duration, formElements);
-            if (displayOnlyButton.NotVisible)
+            if (displayOnly)
             {
                 SetupDisplayOnly(formElements);
+                _shouldValidate = false;
             }
-
+            else
+            {
+                if (!_shouldValidate)
+                {
+                    SetupInitialEdit(formElements);
+                    // after initial 'load', need to validate
+                    _shouldValidate = true;
+                }
+                else
+                {
+                    SetupEdit(formElements);
+                    submit.NotEnabled = !IsValid(formElements);
+                }
+            }
             OnElementsUpdated(EventArgs.Empty);
         }
 
+        
         public async Task FormSubmittedAsync(List<IFormElement> formElements, IAllSettings allSettings)
         {
-            throw new NotImplementedException();
+            // nothing to do in this demo
         }
 
         public event EventHandler ElementsUpdated;
@@ -98,22 +122,108 @@ namespace Demo.FormClasses.Utilities
                 out var input, out var select, out var submit,
                 out var textArea, out var title,
                 out var start, out var duration, formElements);
+            // change the order of the elements
+            formElements.Clear();
+            formElements.Add(closeElement);
+            formElements.Add(display);
+            formElements.Add(submit);
+            formElements.Add(displayOnlyButton);
+            formElements.Add(title);
+            formElements.Add(input);
+            formElements.Add(select);
+            formElements.Add(textArea);
+            formElements.Add(start);
+            formElements.Add(duration);
             closeElement.NotVisible = true;
-            input.NotEnabled = true;
-            select.NotEnabled = true;
+            display.NotVisible = false;
+            display.NotEnabled = false;
             submit.NotVisible = true;
+            displayOnlyButton.NotVisible = true;
+            title.NotVisible = false;
+            title.Value = "Now in display only mode";
+            input.NotVisible = false;
+            input.NotEnabled = true;
+            select.NotVisible = false;
+            select.NotEnabled = true;
+            textArea.NotVisible = false;
             textArea.NotEnabled = true;
+            start.NotVisible = false;
             start.NotEnabled = true;
+            duration.NotVisible = false;
             duration.NotEnabled = true;
         }
-        private void Setup(IAllSettings allSettings, List<IFormElement> formElements)
+        private void SetupInitialEdit(List<IFormElement> formElements)
         {
-            //var allSettingsCalendar = (IAllSettingsCalendar)allSettings;
-            //_swCalendarData = allSettingsCalendar.SwCalendarData;
-            //// extract services for this calendar
-            //_services = allSettings.CalendarSettings.Services;
-            //_user = allSettingsCalendar.UserSettings.User;
+            ExtractElements(out var displayOnlyButton, out var closeElement, out var display,
+                out var input, out var select, out var submit,
+                out var textArea, out var title,
+                out var start, out var duration, formElements);
+            SetupEdit(formElements);
+            submit.NotEnabled = true;// form will not be valid initially
+            title.Value = "Now in edit mode";
+            if (string.IsNullOrEmpty(select.Value))
+            {
+                var firstKey = select.Options.Keys.First();
+                select.Value = firstKey.ToString();
+            }
         }
+        private void SetupEdit(List<IFormElement> formElements)
+        {
+            ExtractElements(out var displayOnlyButton, out var closeElement, out var display,
+                out var input, out var select, out var submit,
+                out var textArea, out var title,
+                out var start, out var duration, formElements);
+            closeElement.NotVisible = true;
+            display.NotVisible = true;
+            submit.NotVisible = false;
+            displayOnlyButton.NotVisible = true;
+            title.NotVisible = false;
+            input.NotVisible = false;
+            input.NotEnabled = false;
+            select.NotVisible = false;
+            select.NotEnabled = false;
+            textArea.NotVisible = false;
+            textArea.NotEnabled = false;
+            if (!string.IsNullOrEmpty(select.Value))
+            {
+                // display the selection in the text box
+                var selectedKey = int.Parse(select.Value);
+                title.Value = "Now in edit mode - " + select.Options[selectedKey] + " is selected"; 
+            }
+            start.NotVisible = false;
+            start.NotEnabled = false;
+            duration.NotVisible = false;
+            duration.NotEnabled = false;
+        }
+        /// <summary>
+        /// validity rules defined here, not in model
+        /// </summary>
+        /// <param name="formElements"></param>
+        /// <returns></returns>
+        private bool IsValid(List<IFormElement> formElements)
+        {
+            var isValid = true;
+            ExtractElements(out var displayOnlyButton, out var closeElement, out var display,
+                out var input, out var select, out var submit,
+                out var textArea, out var title,
+                out var start, out var duration, formElements);
+            // input is the only required element
+            input.ErrorMsg = null;
+            if (string.IsNullOrEmpty(input.Value))
+            {
+                input.ErrorMsg = input.Name + " is required";
+                isValid = false;
+            }
+            // and it must contain at least 5 characters
+            else if (input.Value.Length < 5)
+            {
+                input.ErrorMsg = input.Name + " must contain at least five characters";
+                isValid = false;
+            }
+            // could change other elements in this method
+            return isValid;
+        }
+       
         #endregion
     }
 }

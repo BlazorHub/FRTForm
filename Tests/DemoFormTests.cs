@@ -21,10 +21,11 @@ namespace Tests
     public class DemoFormTests
     {
         private Dictionary<string, IFormSpecs> _formSpecsDictionary;
-        private string _formSpecName = "modalFormSpecs";
+        private string _formSpecName = "demoFormSpecs";
         private IAllSettingsBT _allSettings;
         private DemoFormProcessor _testFormProcessor;
         private List<IFormElement> _testFormElements;
+        private string _formId;
 
         [SetUp]
         public void Setup()
@@ -50,6 +51,7 @@ namespace Tests
             var formSpecs = _formSpecsDictionary[_formSpecName].Clone();
             _testFormProcessor = (DemoFormProcessor) formSpecs.FormProcessor;
             _testFormElements = formSpecs.Elements;
+            _formId = formSpecs.FormId;
         }
 
         #region BasicTests
@@ -93,9 +95,44 @@ namespace Tests
                 out var textArea, out var title,
                 out var start, out var duration, _testFormElements);
             Assert.AreEqual("All elements displayed for styling initially", title.Value);
-        } 
+        }
+        [Test]
+        public void FormSpecs_FormId_Correct()
+        {
+            Assert.AreEqual(_formId, "demoForm");
+        }
         #endregion
-
+        [Test]
+        public void InitialDisplay_Always_BehavesAsExpected()
+        {
+            _testFormProcessor.ExtractElements(out var displayOnlyButton, out var closeElement, out var display,
+                out var input, out var select, out var submit,
+                out var textArea, out var title,
+                out var start, out var duration, _testFormElements);
+            //this form does not call _testFormProcessor.UpdateElementsAsync when first loaded
+            Assert.IsFalse(displayOnlyButton.NotVisible);
+            Assert.IsFalse(displayOnlyButton.NotEnabled);
+            Assert.IsFalse(closeElement.NotVisible);
+            Assert.IsFalse(closeElement.NotEnabled);
+            Assert.IsFalse(display.NotVisible);
+            Assert.IsFalse(display.NotEnabled);
+            Assert.IsFalse(input.NotVisible);
+            Assert.IsFalse(input.NotEnabled);
+            Assert.IsTrue(input.Required);
+            Assert.IsFalse(select.NotVisible);
+            Assert.IsFalse(select.NotEnabled);
+            Assert.IsFalse(submit.NotVisible);
+            Assert.IsFalse(submit.NotEnabled);
+            Assert.IsFalse(textArea.NotVisible);
+            Assert.IsFalse(textArea.NotEnabled);
+            Assert.IsFalse(title.NotVisible);
+            Assert.AreEqual("All elements displayed for styling initially", title.Value);
+            Assert.IsFalse(start.NotVisible);
+            Assert.IsFalse(start.NotEnabled);
+            Assert.IsFalse(duration.NotVisible);
+            Assert.IsFalse(duration.NotEnabled);
+            Assert.IsFalse(ElementOrderCorrect(_testFormElements));
+        }
         [Test]
         public async Task DisplayOnlyButton_Always_BehavesAsExpected()
         {
@@ -105,20 +142,148 @@ namespace Tests
                 out var start, out var duration, _testFormElements);
             await _testFormProcessor.UpdateElementsAsync(_testFormElements, _allSettings, false);
             await _testFormProcessor.HandleClickAsync(_testFormElements, "DisplayOnlyButton", _allSettings);
-            // This button puts the form into displayOnly mode
-            Assert.IsTrue(displayOnlyButton.NotVisible);
+            // This button puts the form into displayOnly mode and changes the element order
             Assert.IsTrue(closeElement.NotVisible);
+            Assert.IsFalse(display.NotVisible);
+            Assert.IsTrue(submit.NotVisible);
+            Assert.IsTrue(displayOnlyButton.NotVisible);
+            Assert.IsFalse(title.NotVisible);
+            Assert.IsTrue(title.Value.Contains("Now in display only mode"));
             Assert.IsTrue(input.NotEnabled);
             Assert.IsTrue(select.NotEnabled);
-            Assert.IsTrue(submit.NotVisible);
             Assert.IsTrue(textArea.NotEnabled);
             Assert.IsTrue(start.NotEnabled);
             Assert.IsTrue(duration.NotEnabled);
+            Assert.IsTrue(ElementOrderCorrect(_testFormElements));
+        }
+        [Test]
+        public async Task TextAreaButton_Always_BehavesAsExpected()
+        {
+            _testFormProcessor.ExtractElements(out var displayOnlyButton, out var closeElement, out var display,
+                out var input, out var select, out var submit,
+                out var textArea, out var title,
+                out var start, out var duration, _testFormElements);
+            await _testFormProcessor.UpdateElementsAsync(_testFormElements, _allSettings, false);
+            await _testFormProcessor.HandleClickAsync(_testFormElements, "DisplayOnlyButton", _allSettings);
+            // This button puts the form into displayOnly mode and changes the element order
+            // now test TextArea button
+            await _testFormProcessor.HandleClickAsync(_testFormElements, "TextArea", _allSettings);
+            Assert.IsTrue(textArea.Value.Contains("Button clicked"));
+            Assert.IsTrue(ElementOrderCorrect(_testFormElements));
+        }
+        [Test]
+        public async Task Edit_Always_BehavesAsExpected()
+        {
+            _testFormProcessor.ExtractElements(out var displayOnlyButton, out var closeElement, out var display,
+                out var input, out var select, out var submit,
+                out var textArea, out var title,
+                out var start, out var duration, _testFormElements);
+            await _testFormProcessor.UpdateElementsAsync(_testFormElements, _allSettings, false);
+            // this must be called before each subsequent test to get element order
+            await _testFormProcessor.HandleClickAsync(_testFormElements, "DisplayOnlyButton", _allSettings);
+            await _testFormProcessor.UpdateElementsAsync(_testFormElements, _allSettings, false);
+            EditModeCorrect(_testFormElements);
+            Assert.IsTrue(ElementOrderCorrect(_testFormElements));
+            await _testFormProcessor.UpdateElementsAsync(_testFormElements, _allSettings, false);
+            EditModeCorrect(_testFormElements);
+        }
+        [Test]
+        public async Task Edit_ChangeSelection_BehavesAsExpected()
+        {
+            _testFormProcessor.ExtractElements(out var displayOnlyButton, out var closeElement, out var display,
+                out var input, out var select, out var submit,
+                out var textArea, out var title,
+                out var start, out var duration, _testFormElements);
+            await _testFormProcessor.UpdateElementsAsync(_testFormElements, _allSettings, false);
+            // this must be called before each subsequent test to get element order
+            await _testFormProcessor.HandleClickAsync(_testFormElements, "DisplayOnlyButton", _allSettings);
+            await _testFormProcessor.UpdateElementsAsync(_testFormElements, _allSettings, false);
+            Assert.AreEqual("1", select.Value);
+            // changing the selection does not enable submit
+            select.Value = "2";
+            await _testFormProcessor.UpdateElementsAsync(_testFormElements, _allSettings, false);
+            Assert.AreEqual("2", select.Value);
+            EditModeCorrect(_testFormElements);
+            Assert.AreEqual("TextInput is required", input.ErrorMsg);
+            Assert.IsTrue(title.Value.Contains("two is selected"));
+            Assert.IsTrue(ElementOrderCorrect(_testFormElements));
+        }
+        [Test]
+        public async Task Edit_InputFieldShort_BehavesAsExpected()
+        {
+            _testFormProcessor.ExtractElements(out var displayOnlyButton, out var closeElement, out var display,
+                out var input, out var select, out var submit,
+                out var textArea, out var title,
+                out var start, out var duration, _testFormElements);
+            await _testFormProcessor.UpdateElementsAsync(_testFormElements, _allSettings, false);
+            // this must be called before each subsequent test to get element order
+            await _testFormProcessor.HandleClickAsync(_testFormElements, "DisplayOnlyButton", _allSettings);
+            await _testFormProcessor.UpdateElementsAsync(_testFormElements, _allSettings, false);
+            // input needs at least 5 characters
+            input.Value = "1234";
+            await _testFormProcessor.UpdateElementsAsync(_testFormElements, _allSettings, false);
+            EditModeCorrect(_testFormElements);
+            Assert.AreEqual("TextInput must contain at least five characters", input.ErrorMsg);
+            Assert.IsTrue(ElementOrderCorrect(_testFormElements));
+        }
+        [Test]
+        public async Task Edit_InputFieldOK_BehavesAsExpected()
+        {
+            _testFormProcessor.ExtractElements(out var displayOnlyButton, out var closeElement, out var display,
+                out var input, out var select, out var submit,
+                out var textArea, out var title,
+                out var start, out var duration, _testFormElements);
+            await _testFormProcessor.UpdateElementsAsync(_testFormElements, _allSettings, false);
+            // this must be called before each subsequent test to get element order
+            await _testFormProcessor.HandleClickAsync(_testFormElements, "DisplayOnlyButton", _allSettings);
+            await _testFormProcessor.UpdateElementsAsync(_testFormElements, _allSettings, false);
+            // input needs at least 5 characters
+            input.Value = "123456";
+            await _testFormProcessor.UpdateElementsAsync(_testFormElements, _allSettings, false);
+            Assert.IsFalse(submit.NotEnabled);
+            Assert.AreEqual(null, input.ErrorMsg);
+            Assert.IsTrue(ElementOrderCorrect(_testFormElements));
         }
         #region Utilities
 
-        
+        private bool ElementOrderCorrect(List<IFormElement> formElements)
+        {
+            // initially in alphabetical order, but after button click should always be in this order
+            var correct = true;
+            if (formElements[0].Name != "Close") correct = false;
+            else if (formElements[1].Name != "DisplayHeader") correct = false;
+            else if (formElements[2].Name != "SubmitHeader") correct = false;
+            else if (formElements[3].Name != "DisplayOnlyButton") correct = false;
+            else if (formElements[4].Name != "Title") correct = false;
+            else if (formElements[5].Name != "TextInput") correct = false;
+            else if (formElements[6].Name != "Select") correct = false;
+            else if (formElements[7].Name != "TextArea") correct = false;
+            else if (formElements[8].Name != "StartTime") correct = false;
+            else if (formElements[9].Name != "Duration") correct = false;
+            return correct;
+        }
 
+        private void EditModeCorrect(List<IFormElement> formElements)
+        {
+            _testFormProcessor.ExtractElements(out var displayOnlyButton, out var closeElement, out var display,
+                out var input, out var select, out var submit,
+                out var textArea, out var title,
+                out var start, out var duration, _testFormElements);
+            Assert.IsTrue(closeElement.NotVisible);
+            Assert.IsTrue(display.NotVisible);
+            Assert.IsFalse(submit.NotVisible);
+            Assert.IsTrue(submit.NotEnabled);
+            Assert.IsTrue(displayOnlyButton.NotVisible);
+            Assert.IsFalse(title.NotVisible);
+            Assert.IsTrue(title.Value.Contains("Now in edit mode"));
+            Assert.IsFalse(input.NotEnabled);
+            Assert.IsTrue(input.Required);
+            Assert.IsFalse(select.NotEnabled);
+            Assert.IsFalse(textArea.NotEnabled);
+            Assert.IsFalse(start.NotEnabled);
+            Assert.IsFalse(duration.NotEnabled);
+            Assert.IsTrue(ElementOrderCorrect(_testFormElements));
+        }
         #endregion
     }
 }

@@ -23,7 +23,7 @@ namespace Demo.FormClasses.Utilities
             get
             {
                 Dictionary<string, IFormSpecs> formSpecs = new Dictionary<string, IFormSpecs>();
-                formSpecs.Add("modalFormSpecs", ModalFormSpecs);
+                formSpecs.Add("demoFormSpecs", DemoFormSpecs);
                 formSpecs.Add("basicFormSpecs", BasicFormSpecs);
                 return formSpecs;
             }
@@ -34,7 +34,7 @@ namespace Demo.FormClasses.Utilities
         /// SubmitAndCloseElement, TextAreaElement, TitleElement
         /// Plus BlockTimeElement in the BlockTime namespace
         /// </summary>
-        private static IFormSpecs ModalFormSpecs
+        private static IFormSpecs DemoFormSpecs
         {
             get
             {
@@ -51,7 +51,7 @@ namespace Demo.FormClasses.Utilities
                 var inputElement = new InputElement(InputType.Text, "TextInput", "Input a text value",
                     "Input a text value", 0, Int32.MaxValue, true);
                 elements.Add(inputElement);
-                var selectElement = new SelectElement("Select", "Select a number", "schedule");
+                var selectElement = new SelectElement("Select", "Select a number", "list_alt");
                 var options = new Dictionary<int, string>
                 {
                     {1, "one"},
@@ -61,7 +61,8 @@ namespace Demo.FormClasses.Utilities
                 elements.Add(selectElement);
                 var submitAndCloseElement = new SubmitAndCloseElement("SubmitHeader", "Save Changes");
                 elements.Add(submitAndCloseElement);
-                var textAreaElement = new TextAreaElement("TextArea", "Details" , "schedule");
+                var textAreaElement = new TextAreaElement("TextArea", "Details" , "notes");
+                textAreaElement.RightIcon = "add_to_photos";
                 elements.Add(textAreaElement);
                 var titleElement = new TitleElement("Title", "All elements displayed for styling initially");
                 elements.Add(titleElement);
@@ -74,7 +75,7 @@ namespace Demo.FormClasses.Utilities
                 duration.DisplayIcon = true;
                 elements.Add(duration);
                 IFormProcessor formProcessor = new DemoFormProcessor();
-                var formSpecs = new FormSpecs("demoForm",25, elements, formProcessor);
+                var formSpecs = new FormSpecs("demoForm", elements, formProcessor);
                 return formSpecs;
             }
         }
@@ -83,12 +84,12 @@ namespace Demo.FormClasses.Utilities
             get
             {
                 var elements = new List<IFormElement>();
-                var titleElement = new TitleElement("Title", "All elements displayed for styling initially");
+                var titleElement = new TitleElement("Title", "Just has submit button - it just closes the form and returns");
                 elements.Add(titleElement);
                 var submit = new ButtonElement("Submit", "Test Submit Button", ButtonType.Submit, "frtform-btn-danger");
                 elements.Add(submit);
                 IFormProcessor formProcessor = new BasicFormProcessor();
-                var formSpecs = new FormSpecs("demoForm", 25, elements, formProcessor);
+                var formSpecs = new FormSpecs("basicForm",  elements, formProcessor);
                 return formSpecs;
             }
         }

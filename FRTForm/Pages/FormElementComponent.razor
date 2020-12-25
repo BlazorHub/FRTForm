@@ -48,6 +48,10 @@
             case FormElementType.Input:
                 var inputElement = (InputElement) _formElement;
                 string inputType = inputElement.InputType.ToString().ToLower();
+                var borderClass = "";
+                var required = "";
+                @if (!string.IsNullOrEmpty(inputElement.ErrorMsg)){borderClass = "frtform-input-error";}
+                else if(!string.IsNullOrEmpty(inputElement.Value)){borderClass = "frtform-input-valid";}
                 <div class="frtform-formgroup-stack">
                     @if (inputElement.Label != null)
                     {
@@ -55,11 +59,12 @@
                             @if (inputElement.Required)
                             {
                                 <span style="color: red"> *</span>
+                                required = "required";
                             }
                         </label>
                     }
-                    <input type="@inputType" @onchange="UpdateElements"  disabled="@_formElement.NotEnabled"
-                           placeholder="@inputElement.Placeholder" id="@id">
+                    <input type="@inputType" @onchange="UpdateElements" class="frtform-input @borderClass" required="@required"
+                           disabled="@_formElement.NotEnabled" placeholder="@inputElement.Placeholder" id="@id">
                 </div>
                 break;
             case FormElementType.Text:
@@ -138,7 +143,7 @@
                 var selectElement = (SelectElement)_formElement;
                 <div class="frtform-formgroup">
                     <div class="frtform-form-icon material-icons">@selectElement.Icon</div>
-                    <select name="" @onchange="UpdateElements" disabled="@_formElement.NotEnabled"
+                    <select class="frtform-select" name="@selectElement.Name" @onchange="UpdateElements" disabled="@_formElement.NotEnabled"
                             value="@selectElement.Value" id="@id">
                         @foreach (var option in @selectElement.Options)
                         {
@@ -156,10 +161,9 @@
                 }
                 <div class="frtform-formgroup">
                     <div class="frtform-form-icon material-icons">@textAreaElement.Icon</div>
-                    <textarea placeholder="@textAreaElement.Placeholder"  
-                          disabled="@_formElement.NotEnabled" id="@id">
-                    @textAreaElement.Value
-                </textarea>
+                    <textarea class="frtform-textarea" placeholder="@textAreaElement.Placeholder"  
+                          name="@textAreaElement.Name" disabled="@_formElement.NotEnabled" id="@id">
+                    @textAreaElement.Value</textarea>
                     <div class="frtform-message-add frtform-formheader-icon material-icons" @onclick="HandleClick">@textAreaElement.RightIcon</div>
                 </div>
                 break;
@@ -168,7 +172,7 @@
         }
         @if (_formElement.ErrorMsg != null)
         {
-            <p style="color: red">@_formElement.ErrorMsg</p>
+            <p class="frtform-element-error">@_formElement.ErrorMsg</p>
         }
     </div>
 }

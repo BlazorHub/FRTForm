@@ -182,9 +182,18 @@ app {
 
 .demoForm {
     font-family: 'Roboto', Arial, sans-serif;
-    font-size: 1rem;
+    font-size: 0.85rem;
     font-weight: 400;
     line-height: 1.5;
     color: #212529;
     text-align: left;
+}
+.frtform-textarea {
+    /*This is a contrived example of over-riding FRTForm styling*/
+    font-family: 'Pacifico' !important;
+}
+#frtform-Select {
+    /*This is a more realistic example of over-riding FRTForm styling.
+      Using the id, means that !important is not needed*/
+    font-family: 'Pacifico';
 }
